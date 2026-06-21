@@ -3,5 +3,5 @@
 * Zero-shot prompting gives the model instructions without examples, while few-shot includes examples to guide output style and accuracy.
 * Bedrock Guardrails can filter unsafe outputs and help enforce responsible AI policies by blocking topics, masking PII, and reducing harmful responses.
 * Amazon Q can help with enterprise knowledge retrieval and developer productivity by answering questions from indexed sources and AWS context.
-* In AWS AI Practitioner prep, temperature controls randomness: lower values are more deterministic, higher values produce more varied responses, especially when sampling.
+* In AWS AI Practitioner prep, temperature controls randomness: lower values are more deterministic, higher values produce more varied responses, especially when sampling with top-p.
 * 

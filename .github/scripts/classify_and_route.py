@@ -175,8 +175,32 @@ def classify_note(note_text):
     reason = parsed.get("reason", "").strip()
 
     if domain not in ("D1", "D2", "D3", "D4", "D5"):
-        print(f"Invalid domain returned: '{domain}'. Full response:\n{raw}")
-        sys.exit(1)
+        domain_match = re.search(r"\bD[1-5]\b", raw)
+        if domain_match:
+            domain = domain_match.group(0)
+            print(f"Warning: normalized invalid domain '{parsed.get('domain', '')}' to '{domain}'.")
+        else:
+            note_lower = note_text.lower()
+            fallback_rules = [
+                ("D5", ["security", "compliance", "governance", "encryption", "iam", "pii", "cloudtrail", "macie"]),
+                ("D4", ["bias", "fairness", "responsible", "guardrails", "transparency", "explainability", "oversight"]),
+                ("D3", ["rag", "vector", "embeddings", "prompt", "temperature", "fine-tuning", "bedrock knowledge", "agent"]),
+                ("D2", ["genai", "generative ai", "llm", "transformer", "token", "foundation model", "amazon q", "bedrock"]),
+                ("D1", ["supervised", "unsupervised", "reinforcement", "evaluation", "ml", "sagemaker", "mlops"]),
+            ]
+
+            inferred_domain = None
+            for fallback_domain, keywords in fallback_rules:
+                if any(keyword in note_lower for keyword in keywords):
+                    inferred_domain = fallback_domain
+                    break
+
+            if not inferred_domain:
+                print(f"Invalid domain returned: '{domain}'. Full response:\n{raw}")
+                sys.exit(1)
+
+            print(f"Warning: fallback inferred domain '{inferred_domain}' from note content.")
+            domain = inferred_domain
 
     return domain, reason
 
