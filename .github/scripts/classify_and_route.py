@@ -107,7 +107,8 @@ def classify_note(note_text):
                 {"role": "user", "content": f"Classify this study note:\n\n{note_text}"}
             ],
             "temperature": 0.1,
-            "max_tokens": 200
+            "max_tokens": 200,
+            "enable_thinking": False
         }
 
         data = json.dumps(payload).encode("utf-8")
