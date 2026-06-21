@@ -95,6 +95,23 @@ def read_inbox():
     return content
 
 
+def infer_domain_from_note(note_text):
+    note_lower = note_text.lower()
+    fallback_rules = [
+        ("D3", ["rag", "prompt engineering", "fine-tuning", "foundation model", "vector", "embeddings", "temperature", "few-shot", "zero-shot", "bedrock knowledge", "agent"]),
+        ("D4", ["bias", "fairness", "responsible", "guardrails", "transparency", "explainability", "oversight"]),
+        ("D5", ["security", "compliance", "governance", "encryption", "iam", "pii", "cloudtrail", "macie"]),
+        ("D2", ["genai", "generative ai", "llm", "transformer", "token", "tokens", "foundation model", "amazon q", "bedrock"]),
+        ("D1", ["supervised", "unsupervised", "reinforcement", "evaluation", "ml", "sagemaker", "mlops", "ai use cases"]),
+    ]
+
+    for fallback_domain, keywords in fallback_rules:
+        if any(keyword in note_lower for keyword in keywords):
+            return fallback_domain
+
+    return None
+
+
 def classify_note(note_text):
     url = "https://api.fireworks.ai/inference/v1/chat/completions"
 
@@ -167,8 +184,13 @@ def classify_note(note_text):
     import re
     json_matches = re.findall(r'\{[^{}]+\}', raw, re.DOTALL)
     if not json_matches:
-        print(f"Could not find JSON in Fireworks response:\n{raw}")
-        sys.exit(1)
+        inferred_domain = infer_domain_from_note(note_text)
+        if not inferred_domain:
+            print(f"Could not find JSON in Fireworks response:\n{raw}")
+            sys.exit(1)
+
+        print(f"Warning: no JSON found in Fireworks response; inferred domain '{inferred_domain}' from note content.")
+        return inferred_domain, "heuristic fallback from note content"
     raw = json_matches[-1].strip()
 
     try:
@@ -186,20 +208,7 @@ def classify_note(note_text):
             domain = domain_match.group(0)
             print(f"Warning: normalized invalid domain '{parsed.get('domain', '')}' to '{domain}'.")
         else:
-            note_lower = note_text.lower()
-            fallback_rules = [
-                ("D5", ["security", "compliance", "governance", "encryption", "iam", "pii", "cloudtrail", "macie"]),
-                ("D4", ["bias", "fairness", "responsible", "guardrails", "transparency", "explainability", "oversight"]),
-                ("D3", ["rag", "vector", "embeddings", "prompt", "temperature", "fine-tuning", "bedrock knowledge", "agent"]),
-                ("D2", ["genai", "generative ai", "llm", "transformer", "token", "foundation model", "amazon q", "bedrock"]),
-                ("D1", ["supervised", "unsupervised", "reinforcement", "evaluation", "ml", "sagemaker", "mlops"]),
-            ]
-
-            inferred_domain = None
-            for fallback_domain, keywords in fallback_rules:
-                if any(keyword in note_lower for keyword in keywords):
-                    inferred_domain = fallback_domain
-                    break
+            inferred_domain = infer_domain_from_note(note_text)
 
             if not inferred_domain:
                 print(f"Invalid domain returned: '{domain}'. Full response:\n{raw}")
