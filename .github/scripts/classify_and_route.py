@@ -157,6 +157,14 @@ def classify_note(note_text):
             raw = raw[4:]
     raw = raw.strip()
 
+    # For thinking models, extract the last JSON object in the response
+    import re
+    json_matches = re.findall(r'\{[^{}]+\}', raw, re.DOTALL)
+    if not json_matches:
+        print(f"Could not find JSON in Fireworks response:\n{raw}")
+        sys.exit(1)
+    raw = json_matches[-1].strip()
+
     try:
         parsed = json.loads(raw)
     except json.JSONDecodeError:
