@@ -18,7 +18,7 @@ if not FIREWORKS_API_KEY:
     sys.exit(1)
 
 DEFAULT_FIREWORKS_MODELS = [
-    "accounts/fireworks/models/llama-v3p3-70b-instruct",
+    "accounts/fireworks/models/deepseek-v3p1",
 ]
 
 INBOX_FILE = "inbox/note.md"
