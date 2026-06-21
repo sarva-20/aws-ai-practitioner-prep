@@ -21,7 +21,7 @@ jobs:
 
       - name: Classify note and append to domain file
         env:
-          GROQ_API_KEY: ${{ secrets.FIREWORKS_API_KEY }}
+          FIREWORKS_API_KEY: ${{ secrets.FIREWORKS_API_KEY }}
         run: python .github/scripts/classify_and_route.py
 
       - name: Commit changes
