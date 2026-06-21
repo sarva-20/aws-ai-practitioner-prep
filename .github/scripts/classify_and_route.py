@@ -12,9 +12,9 @@ import urllib.request
 import urllib.error
 from datetime import datetime
 
-GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
-if not GROQ_API_KEY:
-    print("ERROR: GROQ_API_KEY environment variable not set.")
+FIREWORKS_API_KEY = os.environ.get("FIREWORKS_API_KEY")
+if not FIREWORKS_API_KEY:
+    print("ERROR: FIREWORKS_API_KEY environment variable not set.")
     sys.exit(1)
 
 INBOX_FILE = "inbox/note.md"
@@ -86,10 +86,10 @@ def read_inbox():
 
 
 def classify_note(note_text):
-    url = "https://api.groq.com/openai/v1/chat/completions"
+    url = "https://api.fireworks.ai/inference/v1/chat/completions"
 
     payload = {
-        "model": "llama-3.1-8b-instant",
+        "model": "accounts/fireworks/models/llama-v3p1-8b-instruct",
         "messages": [
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": f"Classify this study note:\n\n{note_text}"}
@@ -104,7 +104,7 @@ def classify_note(note_text):
         data=data,
         headers={
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {GROQ_API_KEY}"
+            "Authorization": f"Bearer {FIREWORKS_API_KEY}"
         },
         method="POST"
     )
