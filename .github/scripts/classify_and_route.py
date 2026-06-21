@@ -1,7 +1,7 @@
 """
 classify_and_route.py
 
-Reads inbox/note.md, sends it to Groq to classify into one of the 5 AIF-C01 domains,
+Reads inbox/note.md, sends it to Fireworks AI to classify into one of the 5 AIF-C01 domains,
 then appends the note to the correct domain file and clears inbox/note.md.
 """
 
@@ -16,6 +16,12 @@ FIREWORKS_API_KEY = os.environ.get("FIREWORKS_API_KEY")
 if not FIREWORKS_API_KEY:
     print("ERROR: FIREWORKS_API_KEY environment variable not set.")
     sys.exit(1)
+
+DEFAULT_FIREWORKS_MODELS = [
+    "accounts/fireworks/models/llama-v3p1-8b-instruct",
+    "accounts/fireworks/models/llama-v3p1-70b-instruct",
+    "accounts/fireworks/models/qwen2p5-72b-instruct",
+]
 
 INBOX_FILE = "inbox/note.md"
 
@@ -88,33 +94,60 @@ def read_inbox():
 def classify_note(note_text):
     url = "https://api.fireworks.ai/inference/v1/chat/completions"
 
-    payload = {
-        "model": "accounts/fireworks/models/llama-v3p1-8b-instruct",
-        "messages": [
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": f"Classify this study note:\n\n{note_text}"}
-        ],
-        "temperature": 0.1,
-        "max_tokens": 200
-    }
+    env_model = os.environ.get("FIREWORKS_MODEL", "").strip()
+    model_candidates = [env_model] if env_model else []
+    model_candidates.extend(DEFAULT_FIREWORKS_MODELS)
 
-    data = json.dumps(payload).encode("utf-8")
-    req = urllib.request.Request(
-        url,
-        data=data,
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {FIREWORKS_API_KEY}"
-        },
-        method="POST"
-    )
+    result = None
+    last_error = None
 
-    try:
-        with urllib.request.urlopen(req) as response:
-            result = json.loads(response.read().decode("utf-8"))
-    except urllib.error.HTTPError as e:
-        print(f"Groq API error: {e.code} {e.reason}")
-        print(e.read().decode("utf-8"))
+    for model_name in model_candidates:
+        payload = {
+            "model": model_name,
+            "messages": [
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": f"Classify this study note:\n\n{note_text}"}
+            ],
+            "temperature": 0.1,
+            "max_tokens": 200
+        }
+
+        data = json.dumps(payload).encode("utf-8")
+        req = urllib.request.Request(
+            url,
+            data=data,
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {FIREWORKS_API_KEY}"
+            },
+            method="POST"
+        )
+
+        try:
+            with urllib.request.urlopen(req) as response:
+                result = json.loads(response.read().decode("utf-8"))
+            break
+        except urllib.error.HTTPError as e:
+            error_body = e.read().decode("utf-8")
+            last_error = f"{e.code} {e.reason}\n{error_body}"
+
+            # Retry with a different model when the current one is unavailable.
+            if e.code == 404 and any(token in error_body for token in ["NOT_FOUND", "Model not found"]):
+                print(f"Model unavailable on Fireworks: {model_name}. Trying next candidate...")
+                continue
+
+            print(f"Fireworks API error: {e.code} {e.reason}")
+            print(error_body)
+            sys.exit(1)
+
+    if result is None:
+        print("Fireworks API error: no usable model found from candidates.")
+        print("Tried models:")
+        for model_name in model_candidates:
+            print(f"- {model_name}")
+        if last_error:
+            print("Last error:")
+            print(last_error)
         sys.exit(1)
 
     raw = result["choices"][0]["message"]["content"].strip()
@@ -129,7 +162,7 @@ def classify_note(note_text):
     try:
         parsed = json.loads(raw)
     except json.JSONDecodeError:
-        print(f"Could not parse Groq response as JSON:\n{raw}")
+        print(f"Could not parse Fireworks response as JSON:\n{raw}")
         sys.exit(1)
 
     domain = parsed.get("domain", "").strip()
@@ -191,7 +224,7 @@ def main():
     print("📥 Reading inbox/note.md...")
     note_text = read_inbox()
 
-    print("🤖 Classifying note with Groq (llama-3.1-8b-instant)...")
+    print("🤖 Classifying note with Fireworks AI...")
     domain_key, reason = classify_note(note_text)
 
     print(f"📂 Routing to {domain_key}...")
