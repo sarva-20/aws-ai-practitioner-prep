@@ -67,10 +67,16 @@ SYSTEM_PROMPT = f"""You are a classifier for AWS Certified AI Practitioner (AIF-
 Given a note written by a student, classify it into exactly one of these domains:
 {DOMAIN_DESCRIPTIONS}
 
-Respond with ONLY a JSON object in this exact format, nothing else, no markdown fences:
+Your final answer must be ONLY this JSON object, nothing else, no explanation before or after:
 {{"domain": "D1", "reason": "one sentence explaining why"}}
 
-The domain value must be exactly one of: D1, D2, D3, D4, D5.
+Rules:
+- domain must be exactly one of: D1, D2, D3, D4, D5
+- If the note mentions RAG, prompt engineering, fine-tuning, or foundation model usage -> D3
+- If the note mentions bias, fairness, explainability, or human oversight -> D4
+- If the note mentions IAM, encryption, compliance, or governance -> D5
+- If the note mentions tokens, embeddings, LLMs, or GenAI concepts -> D2
+- If the note mentions ML basics, SageMaker training, or AI use cases -> D1
 """
 
 
@@ -107,8 +113,7 @@ def classify_note(note_text):
                 {"role": "user", "content": f"Classify this study note:\n\n{note_text}"}
             ],
             "temperature": 0.1,
-            "max_tokens": 200,
-            "enable_thinking": False
+            "max_tokens": 200
         }
 
         data = json.dumps(payload).encode("utf-8")
