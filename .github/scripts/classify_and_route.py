@@ -1,7 +1,7 @@
 """
 classify_and_route.py
 
-Reads inbox/note.md, sends it to Gemini to classify into one of the 5 AIF-C01 domains,
+Reads inbox/note.md, sends it to Groq to classify into one of the 5 AIF-C01 domains,
 then appends the note to the correct domain file and clears inbox/note.md.
 """
 
@@ -12,9 +12,9 @@ import urllib.request
 import urllib.error
 from datetime import datetime
 
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
-if not GEMINI_API_KEY:
-    print("ERROR: GEMINI_API_KEY environment variable not set.")
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
+if not GROQ_API_KEY:
+    print("ERROR: GROQ_API_KEY environment variable not set.")
     sys.exit(1)
 
 INBOX_FILE = "inbox/note.md"
@@ -63,11 +63,10 @@ SYSTEM_PROMPT = f"""You are a classifier for AWS Certified AI Practitioner (AIF-
 Given a note written by a student, classify it into exactly one of these domains:
 {DOMAIN_DESCRIPTIONS}
 
-Respond with ONLY a JSON object in this exact format, nothing else:
-{{
-  "domain": "D1" | "D2" | "D3" | "D4" | "D5",
-  "reason": "one sentence explaining why"
-}}
+Respond with ONLY a JSON object in this exact format, nothing else, no markdown fences:
+{{"domain": "D1", "reason": "one sentence explaining why"}}
+
+The domain value must be exactly one of: D1, D2, D3, D4, D5.
 """
 
 
@@ -79,7 +78,6 @@ def read_inbox():
     with open(INBOX_FILE, "r") as f:
         content = f.read().strip()
 
-    # Check if it's still the placeholder / empty
     if not content or "DELETE EVERYTHING ABOVE" in content:
         print("inbox/note.md is empty or still has placeholder text. Nothing to route.")
         sys.exit(0)
@@ -88,28 +86,26 @@ def read_inbox():
 
 
 def classify_note(note_text):
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_API_KEY}"
+    url = "https://api.groq.com/openai/v1/chat/completions"
 
     payload = {
-        "system_instruction": {
-            "parts": [{"text": SYSTEM_PROMPT}]
-        },
-        "contents": [
-            {
-                "parts": [{"text": f"Classify this study note:\n\n{note_text}"}]
-            }
+        "model": "llama-3.1-8b-instant",
+        "messages": [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": f"Classify this study note:\n\n{note_text}"}
         ],
-        "generationConfig": {
-            "temperature": 0.1,
-            "maxOutputTokens": 200
-        }
+        "temperature": 0.1,
+        "max_tokens": 200
     }
 
     data = json.dumps(payload).encode("utf-8")
     req = urllib.request.Request(
         url,
         data=data,
-        headers={"Content-Type": "application/json"},
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {GROQ_API_KEY}"
+        },
         method="POST"
     )
 
@@ -117,11 +113,11 @@ def classify_note(note_text):
         with urllib.request.urlopen(req) as response:
             result = json.loads(response.read().decode("utf-8"))
     except urllib.error.HTTPError as e:
-        print(f"Gemini API error: {e.code} {e.reason}")
+        print(f"Groq API error: {e.code} {e.reason}")
         print(e.read().decode("utf-8"))
         sys.exit(1)
 
-    raw = result["candidates"][0]["content"]["parts"][0]["text"].strip()
+    raw = result["choices"][0]["message"]["content"].strip()
 
     # Strip markdown code fences if present
     if raw.startswith("```"):
@@ -133,10 +129,17 @@ def classify_note(note_text):
     try:
         parsed = json.loads(raw)
     except json.JSONDecodeError:
-        print(f"Could not parse Gemini response as JSON:\n{raw}")
+        print(f"Could not parse Groq response as JSON:\n{raw}")
         sys.exit(1)
 
-    return parsed["domain"], parsed["reason"]
+    domain = parsed.get("domain", "").strip()
+    reason = parsed.get("reason", "").strip()
+
+    if domain not in ("D1", "D2", "D3", "D4", "D5"):
+        print(f"Invalid domain returned: '{domain}'. Full response:\n{raw}")
+        sys.exit(1)
+
+    return domain, reason
 
 
 def append_to_domain(domain_key, note_text, reason):
@@ -188,14 +191,14 @@ def main():
     print("📥 Reading inbox/note.md...")
     note_text = read_inbox()
 
-    print("🤖 Classifying note with Gemini...")
+    print("🤖 Classifying note with Groq (llama-3.1-8b-instant)...")
     domain_key, reason = classify_note(note_text)
 
     print(f"📂 Routing to {domain_key}...")
     append_to_domain(domain_key, note_text, reason)
 
     clear_inbox()
-    print("\nDone. Push the changes to see them on GitHub.")
+    print("\nDone.")
 
 
 if __name__ == "__main__":
