@@ -1,6 +1,7 @@
-# D2 — Fundamentals of Generative AI
-> 24% of exam | Topics: GenAI concepts, capabilities/limitations, AWS GenAI infrastructure
+# D2 - Fundamentals of Generative AI
 
----
+Mock reset content for workflow testing.
 
-<!-- Notes get appended below this line automatically -->
+- Tokens are the units models process during inference.
+- Embeddings map text into vectors for semantic similarity.
+- Foundation models power summarization, chat, and generation.

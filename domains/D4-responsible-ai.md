@@ -1,6 +1,7 @@
-# D4 — Guidelines for Responsible AI
-> 14% of exam | Topics: Bias, fairness, transparency, explainability, human oversight
+# D4 - Responsible AI
 
----
+Mock reset content for workflow testing.
 
-<!-- Notes get appended below this line automatically -->
+- Fairness and bias monitoring are part of responsible AI practice.
+- Explainability and transparency improve user trust.
+- Human oversight helps reduce harmful model outcomes.

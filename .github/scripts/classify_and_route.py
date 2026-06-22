@@ -18,7 +18,7 @@ if not FIREWORKS_API_KEY:
     sys.exit(1)
 
 DEFAULT_FIREWORKS_MODELS = [
-    "accounts/fireworks/models/qwen3p7-plus",
+    "accounts/fireworks/models/deepseek-v4-flash",
 ]
 
 INBOX_FILE = "inbox/note.md"
