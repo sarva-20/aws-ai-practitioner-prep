@@ -2,7 +2,7 @@
 classify_and_route.py
 
 Reads inbox/note.md, sends it to Fireworks AI to classify into one of the 5 AIF-C01 domains,
-then appends the note to the correct domain file and clears inbox/note.md.
+then appends the note to the correct domain file.
 """
 
 import os
@@ -244,27 +244,6 @@ _{reason}_
     print(f"   Domain: {domain_key} — {reason}")
 
 
-def clear_inbox():
-    placeholder = """# Write your note here in plain English
-
-Just write what you understood from the question or concept.
-No format needed. No template. Just your words.
-
-Example:
-RAG retrieves relevant chunks from a vector DB before the FM generates an answer.
-Bedrock Knowledge Bases handles this end-to-end on AWS.
-Push this file and it gets auto-classified into the right domain.
-
----
-DELETE EVERYTHING ABOVE AND WRITE YOUR NOTE BELOW:
-
-
-"""
-    with open(INBOX_FILE, "w") as f:
-        f.write(placeholder)
-    print("📭 inbox/note.md cleared and reset.")
-
-
 def main():
     print("📥 Reading inbox/note.md...")
     note_text = read_inbox()
@@ -275,7 +254,6 @@ def main():
     print(f"📂 Routing to {domain_key}...")
     append_to_domain(domain_key, note_text, reason)
 
-    print("📝 inbox/note.md preserved (no reset).")
     print("\nDone.")
 
 
