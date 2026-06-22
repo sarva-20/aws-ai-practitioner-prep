@@ -275,7 +275,7 @@ def main():
     print(f"📂 Routing to {domain_key}...")
     append_to_domain(domain_key, note_text, reason)
 
-    clear_inbox()
+    print("📝 inbox/note.md preserved (no reset).")
     print("\nDone.")
 
 
