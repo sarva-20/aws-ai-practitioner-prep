@@ -1,0 +1,19 @@
+- Provisioned Throughput Mode : Allows to reserve a specific capacity in advance for task-specific labeled dataset and to fine-tune the model for greater accuracy ( Healthcare analytics company )
+- Model Evaluation : Process of evaluating and comparing model outputs to determine the right model for that particular use-case
+- Model Inference : Process of a model generating output from an input (prompt -> response)
+- To enhance accuracy of company's ML models : Increase number of epochs allowing the model to learn from the training data longer period potentially capturing more complex patterns and relationships improving accuracy
+- Transformers model use a Self-Attention mechanism and implement contextual embeddings
+- AWS service including both pre-trained and customizable Computer Vision(CV) : AWS Rekognition
+- Amazon SageMaker Clarify : Designed to provide insights into model predictions by explaining how input features contribute to final output
+- Turning a Foundation Model -> DOmain-Specific expert : 1. Use Domain Adaptation Fine-Tuning (or) 2. Use Continued Pre-Training
+- Effective approach to address data imbalance in training dataset : Augment the data by generating new instances of data for underrepresented groups
+- Define the use-case narrowly to ensure the best model is selected for AI application
+- Invocation logging : Detailed logging of all requests and responses during model invocations in Amazon Bedrock
+- Negative prompting : Guiding GenAI models to avoid certain outputs or behaviours when generating cotent
+- Key constituents of a good prompting technique : Instructions, Context, Input data, Output indicator
+- To assess accuracy of translations : Use BLEU ( Bilingual Evaluation Understudy ) score
+- Predict product demand accurately in different locations : Amazon Forecast services
+- Use On-demand pricing for uncertain time commitments and usage extent, paying only for actual usage
+- Influence parameters (Top P), influences the percentage of most-likely candidates that the model considers for the next token
+- Amazon Personalize : Fully managed ML service, uses data to recommend - personalize for users
+- Tokens : Units of text that AI model processes, can be whole words, parts to words, single characters etc ( helps to understand meaning better) 
