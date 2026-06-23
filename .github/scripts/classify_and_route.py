@@ -22,6 +22,7 @@ DEFAULT_FIREWORKS_MODELS = [
 ]
 
 INBOX_FILE = "inbox/note.md"
+LAST_ROUTED_FILE = ".github/last_routed_line"
 
 DOMAIN_FILES = {
     "D1": "domains/D1-fundamentals-of-ai-ml.md",
@@ -80,19 +81,51 @@ Rules:
 """
 
 
+def get_last_routed_line():
+    if not os.path.exists(LAST_ROUTED_FILE):
+        return 0
+
+    try:
+        with open(LAST_ROUTED_FILE, "r") as f:
+            raw = f.read().strip()
+        if not raw:
+            return 0
+        last_line = int(raw)
+        return max(0, last_line)
+    except (OSError, ValueError):
+        print(f"Warning: could not parse {LAST_ROUTED_FILE}; defaulting to 0.")
+        return 0
+
+
+def save_last_routed_line(n):
+    os.makedirs(os.path.dirname(LAST_ROUTED_FILE), exist_ok=True)
+    with open(LAST_ROUTED_FILE, "w") as f:
+        f.write(str(int(n)))
+
+
 def read_inbox():
     if not os.path.exists(INBOX_FILE):
         print("inbox/note.md not found.")
         sys.exit(0)
 
     with open(INBOX_FILE, "r") as f:
-        content = f.read().strip()
+        all_lines = f.readlines()
 
-    if not content or "DELETE EVERYTHING ABOVE" in content:
-        print("inbox/note.md is empty or still has placeholder text. Nothing to route.")
+    total_lines = len(all_lines)
+    last_routed_line = get_last_routed_line()
+
+    if last_routed_line >= total_lines:
+        print("No new lines to route. Skipping.")
         sys.exit(0)
 
-    return content
+    new_lines = all_lines[last_routed_line:]
+    new_content = "\n".join(line.strip() for line in new_lines if line.strip())
+
+    if not new_content or "DELETE EVERYTHING ABOVE" in new_content:
+        print("No new lines to route. Skipping.")
+        sys.exit(0)
+
+    return new_content, total_lines
 
 
 def infer_domain_from_note(note_text):
@@ -246,13 +279,16 @@ _{reason}_
 
 def main():
     print("📥 Reading inbox/note.md...")
-    note_text = read_inbox()
+    note_text, total_lines = read_inbox()
 
     print("🤖 Classifying note with Fireworks AI...")
     domain_key, reason = classify_note(note_text)
 
     print(f"📂 Routing to {domain_key}...")
     append_to_domain(domain_key, note_text, reason)
+
+    save_last_routed_line(total_lines)
+    print(f"🔢 Updated {LAST_ROUTED_FILE} to {total_lines}")
 
     print("\nDone.")
 
